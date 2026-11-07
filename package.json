@@ -10,7 +10,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "electron:dev": "vite build && electron .",
-    "dist:win": "npm run build && electron-builder --win",
+    "dist:win": "npm run build && electron-builder --win --publish never",
     "android:sync": "npm run build && npx cap sync android"
   },
   "dependencies": {
