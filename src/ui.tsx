@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode, type DragEvent } from 'react'
-import { Upload } from 'lucide-react'
+import { FilePlus2 } from 'lucide-react'
 
 export type Notify = (msg: string, kind?: 'ok' | 'error') => void
 export interface ToolProps { notify: Notify }
@@ -34,9 +34,10 @@ export function Drop(props: { accept: string; multiple?: boolean; label: string;
       onClick={() => input.current?.click()}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}
       onDragLeave={() => setOver(false)} onDrop={onDrop}>
-      <Upload size={20} strokeWidth={1.75} />
+      <span className="drop-icon"><FilePlus2 size={22} strokeWidth={1.6} /></span>
       <span className="drop-label">{props.label}</span>
       {props.hint && <span className="drop-hint">{props.hint}</span>}
+      <span className="drop-cta">Browse files</span>
       <input ref={input} type="file" hidden accept={props.accept} multiple={props.multiple}
         onChange={(e) => { take(e.target.files); e.target.value = '' }} />
     </button>

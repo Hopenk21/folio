@@ -29,6 +29,9 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npx cap add android
+      - name: Android icons
+        run: |
+          if [ -f assets/icon-only.png ]; then npx --yes @capacitor/assets generate --android --iconBackgroundColor '#f7f6f3' --iconBackgroundColorDark '#161615'; fi
       - run: npx cap sync android
       - run: ./gradlew assembleDebug
         working-directory: android

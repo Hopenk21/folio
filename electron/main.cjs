@@ -5,7 +5,7 @@ const path = require('path')
 function createWindow() {
   const win = new BrowserWindow({
     width: 1120, height: 760, minWidth: 820, minHeight: 560,
-    backgroundColor: '#f7f6f3', autoHideMenuBar: true, title: 'Folio',
+    backgroundColor: '#f6f5f1', icon: fs.existsSync(path.join(__dirname, '..', 'dist', 'logo.png')) ? path.join(__dirname, '..', 'dist', 'logo.png') : undefined, autoHideMenuBar: true, title: 'Folio',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false },
   })
   win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))

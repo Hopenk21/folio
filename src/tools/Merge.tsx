@@ -39,6 +39,7 @@ export default function Merge({ notify }: ToolProps) {
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => { if (dragFrom.current !== null) move(dragFrom.current, i); dragFrom.current = null }}>
               <GripVertical size={16} className="grip" />
+              <span className="badge">PDF</span>
               <div className="row-main">
                 <span className="row-title">{it.name}</span>
                 <span className="row-sub">{it.pages} pages · {fmtSize(it.bytes.length)}</span>
