@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { ArrowLeft, ArrowRight, RotateCw, Trash2 } from 'lucide-react'
-import { organize } from '../engine/pdf'
+import { GripVertical, RotateCw, Trash2 } from 'lucide-react'
+import { organize, pageCount } from '../engine/pdf'
 import { renderThumbs } from '../engine/render'
 import { saveFile } from '../platform'
-import { Drop, Button, Picked, ToolProps, baseName, useTask } from '../ui'
+import { moveItem, useDragReorder } from '../drag'
+import { Drop, Button, Note, Picked, ToolProps, baseName, useTask } from '../ui'
 
 interface Pg { index: number; rotate: number; thumb?: string }
 
@@ -11,23 +12,19 @@ export default function Organize({ notify }: ToolProps) {
   const [file, setFile] = useState<Picked | null>(null)
   const [pages, setPages] = useState<Pg[]>([])
   const [busy, run] = useTask(notify)
+  const drag = useDragReorder((from, to) => setPages((cur) => moveItem(cur, from, to)))
 
   const open = async ([f]: Picked[]) => {
     try {
+      const n = await pageCount(f.bytes)
       setFile(f)
-      await renderThumbs(f.bytes, (i, url) =>
-        setPages((cur) => {
-          const next = cur.length ? cur.slice() : []
-          next[i] = { index: i, rotate: 0, thumb: url }
-          return next
-        }))
-    } catch { notify('That file could not be read as a PDF', 'error'); setFile(null); setPages([]) }
-  }
-  const move = (i: number, d: number) => {
-    const j = i + d
-    if (j < 0 || j >= pages.length) return
-    const next = pages.slice();[next[i], next[j]] = [next[j], next[i]]
-    setPages(next)
+      setPages(Array.from({ length: n }, (_, i) => ({ index: i, rotate: 0 })))
+      await renderThumbs(f.bytes, (i, url) => setPages((cur) => cur.map((p) => (p.index === i ? { ...p, thumb: url } : p))))
+    } catch {
+      notify('That file could not be read as a PDF', 'error')
+      setFile(null)
+      setPages([])
+    }
   }
   const rotate = (i: number) => setPages(pages.map((p, k) => (k === i ? { ...p, rotate: (p.rotate + 90) % 360 } : p)))
   const save = () => run(async () => {
@@ -37,17 +34,24 @@ export default function Organize({ notify }: ToolProps) {
 
   return (
     <>
-      {!file && <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Reorder, rotate or delete its pages" onFiles={open} />}
+      {!file && <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Drag pages into the order you want" onFiles={open} />}
       {file && (
         <>
-          <div className="grid">
-            {pages.filter(Boolean).map((p, i) => (
-              <div className="thumb" key={p.index}>
-                <div className="thumb-img"><img src={p.thumb} alt={`Page ${p.index + 1}`} style={{ transform: `rotate(${p.rotate}deg)` }} /></div>
+          <Note>Hold the grip on a page and drag it to where it should go. The page under your finger is highlighted, and it drops there when you let go.</Note>
+          <div className="grid" ref={drag.ref}>
+            {pages.map((p, i) => (
+              <div
+                className={'thumb' + (drag.state?.from === i ? ' dragging' : '') + (drag.state && drag.state.to === i && drag.state.to !== drag.state.from ? ' drop-target' : '')}
+                key={p.index}
+              >
+                <div className="thumb-img" onPointerDown={(e) => { if (e.pointerType === 'mouse') drag.start(e, i) }}>
+                  {p.thumb
+                    ? <img src={p.thumb} alt={`Page ${i + 1}`} draggable={false} style={{ transform: `rotate(${p.rotate}deg)` }} />
+                    : <span className="thumb-wait" />}
+                </div>
                 <div className="thumb-bar">
-                  <span className="thumb-num">{p.index + 1}</span>
-                  <button className="icon" aria-label="Move earlier" onClick={() => move(i, -1)}><ArrowLeft size={14} /></button>
-                  <button className="icon" aria-label="Move later" onClick={() => move(i, 1)}><ArrowRight size={14} /></button>
+                  <button className="icon handle" aria-label={`Drag page ${i + 1} to reorder`} onPointerDown={(e) => drag.start(e, i)}><GripVertical size={16} /></button>
+                  <span className="thumb-num">{i + 1}</span>
                   <button className="icon" aria-label="Rotate" onClick={() => rotate(i)}><RotateCw size={14} /></button>
                   <button className="icon" aria-label="Delete page" onClick={() => setPages(pages.filter((_, k) => k !== i))}><Trash2 size={14} /></button>
                 </div>

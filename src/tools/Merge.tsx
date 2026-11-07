@@ -1,13 +1,14 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { ChevronUp, ChevronDown, GripVertical, X } from 'lucide-react'
 import { mergePdfs, pageCount } from '../engine/pdf'
 import { saveFile } from '../platform'
+import { moveItem, useDragReorder } from '../drag'
 import { Drop, Button, Item, Picked, ToolProps, fmtSize, nid, useTask } from '../ui'
 
 export default function Merge({ notify }: ToolProps) {
   const [items, setItems] = useState<Item[]>([])
   const [busy, run] = useTask(notify)
-  const dragFrom = useRef<number | null>(null)
+  const drag = useDragReorder((from, to) => setItems((cur) => moveItem(cur, from, to)))
 
   const add = async (files: Picked[]) => {
     const next: Item[] = []
@@ -19,9 +20,7 @@ export default function Merge({ notify }: ToolProps) {
   }
   const move = (from: number, to: number) => {
     if (to < 0 || to >= items.length) return
-    const next = items.slice()
-    next.splice(to, 0, next.splice(from, 1)[0])
-    setItems(next)
+    setItems(moveItem(items, from, to))
   }
   const merge = () => run(async () => {
     const out = await mergePdfs(items.map((i) => i.bytes))
@@ -32,13 +31,13 @@ export default function Merge({ notify }: ToolProps) {
     <>
       <Drop accept="application/pdf,.pdf" multiple label="Add PDF files" hint="Drop here or browse" onFiles={add} />
       {items.length > 0 && (
-        <ul className="list">
+        <ul className="list" ref={drag.ref}>
           {items.map((it, i) => (
-            <li key={it.id} className="row" draggable
-              onDragStart={() => (dragFrom.current = i)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => { if (dragFrom.current !== null) move(dragFrom.current, i); dragFrom.current = null }}>
-              <GripVertical size={16} className="grip" />
+            <li
+              key={it.id}
+              className={'row' + (drag.state?.from === i ? ' dragging' : '') + (drag.state && drag.state.to === i && drag.state.to !== drag.state.from ? ' drop-target' : '')}
+            >
+              <button className="icon handle" aria-label={`Drag ${it.name} to reorder`} onPointerDown={(e) => drag.start(e, i)}><GripVertical size={16} /></button>
               <span className="badge">PDF</span>
               <div className="row-main">
                 <span className="row-title">{it.name}</span>

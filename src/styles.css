@@ -163,3 +163,24 @@ input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
 
 .toast { display: flex; align-items: center; gap: 14px; }
 .toast button { padding: 5px 10px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--bg) 18%, transparent); color: inherit; font-weight: 600; white-space: nowrap; }
+
+/* ---- drag to reorder + library ---- */
+.handle { touch-action: none; cursor: grab; width: 34px; height: 34px; color: var(--muted); }
+.handle:active { cursor: grabbing; }
+.thumb, .row { user-select: none; -webkit-user-select: none; }
+.thumb img { -webkit-user-drag: none; }
+.thumb.dragging, .row.dragging { opacity: .3; }
+.thumb.drop-target { outline: 2.5px solid var(--accent); outline-offset: -2px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.row.drop-target { outline: 2px solid var(--accent); outline-offset: -2px; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+.thumb-img { cursor: grab; }
+.thumb-wait { width: 56%; aspect-ratio: 3 / 4; border-radius: 4px; background: color-mix(in srgb, var(--ink) 8%, transparent); animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .5; } }
+.thumb-bar .handle { width: 30px; height: 30px; margin-left: -6px; }
+.badge.docx { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); }
+.badge.zip { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--muted); }
+.icon.share { color: var(--accent); }
+.icon.danger { width: auto; padding: 0 10px; background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.sure { font-size: 12.5px; font-weight: 650; }
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 48px 20px; border: 1px dashed var(--line); border-radius: 14px; background: var(--surface); }
+.empty-title { margin: 6px 0 0; font-weight: 650; font-size: 16px; }
+.toast { flex-wrap: wrap; justify-content: center; }

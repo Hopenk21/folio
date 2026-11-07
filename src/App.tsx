@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
-import { ArrowLeft, Combine, FileOutput, FileText, House, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
-import { isAndroid } from './platform'
+import { ArrowLeft, Combine, FileOutput, FileText, FolderOpen, House, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
+import { hasLibrary, isAndroid } from './platform'
 import type { Notify, ToolProps } from './ui'
 import Merge from './tools/Merge'
 import Organize from './tools/Organize'
@@ -10,10 +10,12 @@ import Optimize from './tools/Optimize'
 import ToWord from './tools/ToWord'
 import ToPdf from './tools/ToPdf'
 import Scan from './tools/Scan'
+import Library from './tools/Library'
 
-interface Tool { id: string; group: string; label: string; title: string; desc: string; icon: typeof Combine; View: ComponentType<ToolProps>; androidOnly?: boolean }
+interface Tool { id: string; group: string; label: string; title: string; desc: string; icon: typeof Combine; View: ComponentType<ToolProps>; androidOnly?: boolean; libraryOnly?: boolean }
 
 const TOOLS: Tool[] = [
+  { id: 'library', group: 'Library', label: 'Library', title: 'Your files', desc: "Everything you've made in Folio, ready to share.", icon: FolderOpen, View: Library, libraryOnly: true },
   { id: 'merge', group: 'Organize', label: 'Merge', title: 'Merge PDFs', desc: 'Combine several PDFs into one, in the order you choose.', icon: Combine, View: Merge },
   { id: 'organize', group: 'Organize', label: 'Organize', title: 'Organize pages', desc: 'Reorder, rotate and delete pages.', icon: LayoutGrid, View: Organize },
   { id: 'split', group: 'Organize', label: 'Split', title: 'Split or extract', desc: 'Pull out page ranges or cut into parts.', icon: Scissors, View: Split },
@@ -23,7 +25,7 @@ const TOOLS: Tool[] = [
   { id: 'topdf', group: 'Convert', label: 'To PDF', title: 'Word to PDF', desc: 'Turn a Word document into a PDF.', icon: FileOutput, View: ToPdf },
   { id: 'scan', group: 'Capture', label: 'Scan', title: 'Scan documents', desc: 'Capture pages with your camera and save as PDF.', icon: ScanLine, View: Scan, androidOnly: true },
 ]
-const GROUPS = ['Organize', 'Edit', 'Convert', 'Capture']
+const GROUPS = ['Library', 'Organize', 'Edit', 'Convert', 'Capture']
 
 
 const USE_KEY = 'folio.usage'
@@ -62,7 +64,7 @@ function Logo({ size = 28 }: { size?: number }) {
 }
 
 export default function App() {
-  const tools = TOOLS.filter((t) => !t.androidOnly || isAndroid)
+  const tools = TOOLS.filter((t) => (!t.androidOnly || isAndroid) && (!t.libraryOnly || hasLibrary))
   const [active, setActive] = useState<string>('home')
   const [splash, setSplash] = useState(true)
   const [usage, setUsage] = useState(readUsage)
@@ -161,7 +163,8 @@ export default function App() {
       </main>
       {toast && (
         <div className={'toast ' + toast.kind} role="status">
-          <span>{toast.msg}</span>
+          <span>{toast.msg}{toast.kind === 'ok' && hasLibrary ? ' · in your Library' : ''}</span>
+          {toast.kind === 'ok' && hasLibrary && <button onClick={() => { setActive('library'); setToast(null) }}>Open Library</button>}
           {toast.kind === 'ok' && <button onClick={() => { setActive('home'); setToast(null) }}>More tools</button>}
         </div>
       )}
