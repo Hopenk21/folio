@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ComponentType } from 'react'
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
 import { ArrowLeft, Combine, FileOutput, FileText, House, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
 import { isAndroid } from './platform'
 import type { Notify, ToolProps } from './ui'
@@ -25,6 +25,35 @@ const TOOLS: Tool[] = [
 ]
 const GROUPS = ['Organize', 'Edit', 'Convert', 'Capture']
 
+
+const USE_KEY = 'folio.usage'
+const readUsage = (): Record<string, number> => {
+  try { return JSON.parse(localStorage.getItem(USE_KEY) || '{}') } catch { return {} }
+}
+const bumpUsage = (id: string) => {
+  try { const u = readUsage(); u[id] = (u[id] || 0) + 1; localStorage.setItem(USE_KEY, JSON.stringify(u)) } catch { /* storage unavailable */ }
+}
+const greeting = () => {
+  const h = new Date().getHours()
+  return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
+}
+
+function Splash({ onDone }: { onDone: () => void }) {
+  const [leaving, setLeaving] = useState(false)
+  useEffect(() => {
+    const a = window.setTimeout(() => setLeaving(true), 1300)
+    const b = window.setTimeout(onDone, 1750)
+    return () => { window.clearTimeout(a); window.clearTimeout(b) }
+  }, [onDone])
+  return (
+    <div className={'splash' + (leaving ? ' out' : '')} aria-hidden>
+      <div className="splash-logo"><Logo size={96} /></div>
+      <p className="splash-name">Folio</p>
+      <p className="splash-tag">Your PDF toolkit</p>
+    </div>
+  )
+}
+
 function Logo({ size = 28 }: { size?: number }) {
   const [broken, setBroken] = useState(false)
   if (broken)
@@ -35,20 +64,27 @@ function Logo({ size = 28 }: { size?: number }) {
 export default function App() {
   const tools = TOOLS.filter((t) => !t.androidOnly || isAndroid)
   const [active, setActive] = useState<string>('home')
+  const [splash, setSplash] = useState(true)
+  const [usage, setUsage] = useState(readUsage)
+  const activeRef = useRef('home')
+  activeRef.current = active
   const [toast, setToast] = useState<{ msg: string; kind: 'ok' | 'error' } | null>(null)
   const timer = useRef<number>()
 
   const notify: Notify = useCallback((msg, kind = 'ok') => {
+    if (kind === 'ok' && activeRef.current !== 'home') { bumpUsage(activeRef.current); setUsage(readUsage()) }
     setToast({ msg, kind })
     window.clearTimeout(timer.current)
     timer.current = window.setTimeout(() => setToast(null), 4500)
   }, [])
 
   const tool = tools.find((t) => t.id === active)
+  const jumpBack = tools.filter((t) => usage[t.id]).sort((x, y) => usage[y.id] - usage[x.id]).slice(0, 3)
   const View = tool?.View
 
   return (
     <div className="app">
+      {splash && <Splash onDone={() => setSplash(false)} />}
       <nav className="nav" aria-label="Tools">
         <button className="brand" onClick={() => setActive('home')} aria-label="Folio home"><Logo /><span className="brand-name">Folio</span></button>
         <ul>
@@ -79,8 +115,19 @@ export default function App() {
         {!tool && (
           <div className="home">
             <div className="home-top"><Logo size={36} /></div>
+            <p className="hello">{greeting()}</p>
             <h1 className="home-title">What would you like to do?</h1>
             <p className="home-sub">Everything runs on your device. Your files are never uploaded.</p>
+            {jumpBack.length > 0 && (
+              <section>
+                <h2 className="group">Jump back in</h2>
+                <div className="chips">
+                  {jumpBack.map((t) => (
+                    <button key={t.id} className="chip" onClick={() => setActive(t.id)}><t.icon size={16} strokeWidth={1.8} />{t.label}</button>
+                  ))}
+                </div>
+              </section>
+            )}
             {GROUPS.map((g) => {
               const items = tools.filter((t) => t.group === g)
               if (!items.length) return null
@@ -112,7 +159,12 @@ export default function App() {
           </>
         )}
       </main>
-      {toast && <div className={'toast ' + toast.kind} role="status">{toast.msg}</div>}
+      {toast && (
+        <div className={'toast ' + toast.kind} role="status">
+          <span>{toast.msg}</span>
+          {toast.kind === 'ok' && <button onClick={() => { setActive('home'); setToast(null) }}>More tools</button>}
+        </div>
+      )}
     </div>
   )
 }
