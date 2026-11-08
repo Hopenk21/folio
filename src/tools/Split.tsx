@@ -2,7 +2,7 @@ import { useState } from 'react'
 import JSZip from 'jszip'
 import { extractPages, pageCount, parseRanges, splitEvery } from '../engine/pdf'
 import { saveFile } from '../platform'
-import { Drop, Button, Field, Picked, ToolProps, baseName, useTask , useIncoming } from '../ui'
+import { Drop, Button, Field, Picked, ToolProps, baseName, useTask , useIncoming , FileCard } from '../ui'
 
 export default function Split(props: ToolProps) {
   const { notify } = props
@@ -34,10 +34,7 @@ export default function Split(props: ToolProps) {
   if (!file) return <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Extract pages or split into parts" onFiles={open} />
   return (
     <>
-      <div className="card">
-        <p className="row-title">{file.name}</p>
-        <p className="row-sub">{total} pages</p>
-      </div>
+      <FileCard file={file} sub={`${total} pages`} />
       <div className="seg" role="tablist">
         <button className={mode === 'ranges' ? 'on' : ''} onClick={() => setMode('ranges')}>Extract pages</button>
         <button className={mode === 'every' ? 'on' : ''} onClick={() => setMode('every')}>Split every N pages</button>

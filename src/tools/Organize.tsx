@@ -4,12 +4,13 @@ import { organize, pageCount } from '../engine/pdf'
 import { renderThumbs } from '../engine/render'
 import { saveFile } from '../platform'
 import { moveItem, useDragReorder } from '../drag'
-import { Drop, Button, Note, Picked, ToolProps, baseName, useTask , useIncoming } from '../ui'
+import { Drop, Button, Note, Picked, ToolProps, baseName, useTask , useIncoming , useViewer } from '../ui'
 
 interface Pg { index: number; rotate: number; thumb?: string }
 
 export default function Organize(props: ToolProps) {
   const { notify } = props
+  const view = useViewer()
   const [file, setFile] = useState<Picked | null>(null)
   const [pages, setPages] = useState<Pg[]>([])
   const [busy, run] = useTask(notify)
@@ -63,6 +64,7 @@ export default function Organize(props: ToolProps) {
           </div>
           <div className="actions">
             <Button variant="quiet" onClick={() => { setFile(null); setPages([]) }}>Choose another</Button>
+            <Button variant="quiet" onClick={() => view(file.name, file.bytes)}>View original</Button>
             <Button onClick={save} busy={busy} disabled={!pages.length}>Save PDF</Button>
           </div>
         </>

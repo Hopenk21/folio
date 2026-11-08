@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type DragEvent } from 'react'
 import { histAdd } from './platform'
-import { FilePlus2 } from 'lucide-react'
+import { Eye, FilePlus2 } from 'lucide-react'
 
 export type Notify = (msg: string, kind?: 'ok' | 'error') => void
 export interface ToolProps {
@@ -84,3 +84,22 @@ export function Field(props: { label: string; children: ReactNode; note?: string
 }
 
 export const Note = ({ children }: { children: ReactNode }) => <p className="note">{children}</p>
+
+// ---- PDF viewer access for every tool ----
+export const ViewerCtx = createContext<(name: string, bytes: Uint8Array) => void>(() => {})
+export const useViewer = () => useContext(ViewerCtx)
+
+/** The "file you picked" card, with a View button for PDFs. */
+export function FileCard({ file, sub }: { file: Picked; sub?: string }) {
+  const view = useViewer()
+  const isPdf = /\.pdf$/i.test(file.name)
+  return (
+    <div className="card filecard">
+      <div className="row-main">
+        <p className="row-title">{file.name}</p>
+        {sub && <p className="row-sub">{sub}</p>}
+      </div>
+      {isPdf && <button className="btn quiet sm" onClick={() => view(file.name, file.bytes)}><Eye size={15} /> View</button>}
+    </div>
+  )
+}

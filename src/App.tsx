@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
 import { ArrowLeft, Combine, FileOutput, FileText, FolderOpen, History as HistoryIcon, House, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
-import { consumeResume, hasLibrary, isAndroid } from './platform'
-import { ToolCtx, type Notify, type Picked, type ToolProps } from './ui'
+import { consumeResume, hasLibrary, isAndroid, isNativeAndroid } from './platform'
+import Viewer from './Viewer'
+import { ToolCtx, ViewerCtx, type Notify, type Picked, type ToolProps } from './ui'
 import Merge from './tools/Merge'
 import Organize from './tools/Organize'
 import Split from './tools/Split'
@@ -70,6 +71,9 @@ export default function App() {
   const [boot] = useState(consumeResume) // set when Android restarted the app mid-scan
   const [active, setActive] = useState<string>(boot || 'home')
   const [splash, setSplash] = useState(!boot)
+  const [viewing, setViewing] = useState<{ name: string; bytes: Uint8Array } | null>(null)
+  const viewingRef = useRef(viewing)
+  viewingRef.current = viewing
   const [incoming, setIncoming] = useState<{ toolId: string; files: Picked[] } | null>(null)
   const [usage, setUsage] = useState(readUsage)
   const activeRef = useRef('home')
@@ -84,17 +88,32 @@ export default function App() {
     timer.current = window.setTimeout(() => setToast(null), 4500)
   }, [])
 
+  const openViewer = useCallback((name: string, bytes: Uint8Array) => setViewing({ name, bytes }), [])
   const openIn = useCallback((toolId: string, files: Picked[]) => { setIncoming({ toolId, files }); setActive(toolId) }, [])
   useEffect(() => {
     const onRej = (e: PromiseRejectionEvent) => notify(String((e.reason && e.reason.message) || 'Something went wrong'), 'error')
     window.addEventListener('unhandledrejection', onRej)
     return () => window.removeEventListener('unhandledrejection', onRej)
   }, [notify])
+  // Android back button: close the viewer, then go back to all tools, then leave the app.
+  useEffect(() => {
+    if (!isNativeAndroid) return
+    let handle: { remove: () => void } | undefined
+    import('@capacitor/app').then(({ App: CapApp }) => {
+      CapApp.addListener('backButton', () => {
+        if (viewingRef.current) setViewing(null)
+        else if (activeRef.current !== 'home') setActive('home')
+        else CapApp.exitApp()
+      }).then((h) => { handle = h })
+    })
+    return () => handle?.remove()
+  }, [])
   const tool = tools.find((t) => t.id === active)
   const jumpBack = tools.filter((t) => usage[t.id]).sort((x, y) => usage[y.id] - usage[x.id]).slice(0, 3)
   const View = tool?.View
 
   return (
+    <ViewerCtx.Provider value={openViewer}>
     <div className="app">
       {splash && <Splash onDone={() => setSplash(false)} />}
       <nav className="nav" aria-label="Tools">
@@ -182,6 +201,8 @@ export default function App() {
           {toast.kind === 'ok' && <button onClick={() => { setActive('home'); setToast(null) }}>More tools</button>}
         </div>
       )}
+      {viewing && <Viewer name={viewing.name} bytes={viewing.bytes} onClose={() => setViewing(null)} />}
     </div>
+    </ViewerCtx.Provider>
   )
 }

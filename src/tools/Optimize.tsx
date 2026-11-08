@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { optimize } from '../engine/pdf'
 import { saveFile } from '../platform'
-import { Drop, Button, Note, Picked, ToolProps, baseName, fmtSize, useTask , useIncoming } from '../ui'
+import { Drop, Button, Note, Picked, ToolProps, baseName, fmtSize, useTask , useIncoming , FileCard } from '../ui'
 
 export default function Optimize(props: ToolProps) {
   const { notify } = props
@@ -20,7 +20,7 @@ export default function Optimize(props: ToolProps) {
   if (!file) return <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Tidy structure and strip metadata" onFiles={([f]) => setFile(f)} />
   return (
     <>
-      <div className="card"><p className="row-title">{file.name}</p><p className="row-sub">{fmtSize(file.bytes.length)}</p></div>
+      <FileCard file={file} sub={fmtSize(file.bytes.length)} />
       <Note>This is a lossless clean-up: it repacks the file structure and removes author and title metadata. It does not recompress images, so scan-heavy PDFs may barely shrink.</Note>
       <div className="actions">
         <Button variant="quiet" onClick={() => setFile(null)}>Choose another</Button>

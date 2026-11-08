@@ -1,10 +1,8 @@
 node_modules
 dist
+dist-android
 release
 android
-
-folio-windows
-folio-android
-release
-*.exe
-*.apk
+*.jks
+*.keystore
+.DS_Store

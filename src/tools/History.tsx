@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { ChevronRight, History as HistoryIcon, Trash2 } from 'lucide-react'
 import { histClear, histDelete, histList, histRead, histTouch, type HistEntry } from '../platform'
-import { fmtSize, ToolProps } from '../ui'
+import { fmtSize, ToolProps, useViewer } from '../ui'
 
 const PDF_TOOLS: [string, string][] = [['merge', 'Merge'], ['organize', 'Organize'], ['split', 'Split'], ['stamp', 'Stamp'], ['optimize', 'Optimize'], ['toword', 'To Word']]
 const DOCX_TOOLS: [string, string][] = [['topdf', 'To PDF']]
@@ -23,6 +23,7 @@ export default function History({ notify, openIn }: ToolProps) {
   const [open, setOpen] = useState<string | null>(null)
   const [confirm, setConfirm] = useState<string | null>(null)
   const timer = useRef<number>()
+  const openViewer = useViewer()
   useEffect(() => () => window.clearTimeout(timer.current), [])
 
   const ask = (key: string, then: () => Promise<void>) => {
@@ -36,6 +37,9 @@ export default function History({ notify, openIn }: ToolProps) {
     then().then(() => setItems(histList()))
   }
 
+  const viewEntry = async (e: HistEntry) => {
+    try { openViewer(e.name, await histRead(e.id)) } catch { notify('That file is no longer stored.', 'error') }
+  }
   const reopen = async (e: HistEntry, toolId: string) => {
     try {
       const bytes = await histRead(e.id)
@@ -81,6 +85,7 @@ export default function History({ notify, openIn }: ToolProps) {
               </button>
               {open === e.id && (
                 <div className="row-open">
+                  {extOf(e.name) === 'pdf' && <button className="chip" onClick={() => viewEntry(e)}>View</button>}
                   <span className="row-sub">Open in</span>
                   {tools.map(([id, label]) => <button key={id} className="chip" onClick={() => reopen(e, id)}>{label}</button>)}
                 </div>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Download, FolderOpen, Share2, Trash2 } from 'lucide-react'
-import { isElectron, libDelete, libExport, libList, libShare, type LibFile } from '../platform'
-import { fmtSize, ToolProps } from '../ui'
+import { Download, Eye, FolderOpen, Share2, Trash2 } from 'lucide-react'
+import { isElectron, libDelete, libExport, libList, libRead, libShare, type LibFile } from '../platform'
+import { fmtSize, ToolProps, useViewer } from '../ui'
 
 const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 const extOf = (n: string) => (n.split('.').pop() || '').toLowerCase()
@@ -10,10 +10,14 @@ export default function Library({ notify }: ToolProps) {
   const [files, setFiles] = useState<LibFile[] | null>(null)
   const [confirm, setConfirm] = useState<string | null>(null)
   const timer = useRef<number>()
+  const openViewer = useViewer()
 
   const refresh = useCallback(async () => setFiles(await libList()), [])
   useEffect(() => { refresh() }, [refresh])
 
+  const view = async (name: string) => {
+    try { openViewer(name, await libRead(name)) } catch { notify('Could not open that file', 'error') }
+  }
   const share = async (name: string) => {
     try { await libShare(name) } catch (e: any) { notify(e?.message || 'Could not share that file', 'error') }
   }
@@ -51,6 +55,7 @@ export default function Library({ notify }: ToolProps) {
               <span className="row-title">{f.name}</span>
               <span className="row-sub">{fmtSize(f.size)} · {fmtDate(f.mtime)}</span>
             </div>
+            {extOf(f.name) === 'pdf' && <button className="icon" aria-label={`View ${f.name}`} title="View" onClick={() => view(f.name)}><Eye size={16} /></button>}
             {isElectron ? (
               <>
                 <button className="icon" aria-label="Show in folder" title="Show in folder" onClick={() => share(f.name)}><FolderOpen size={16} /></button>

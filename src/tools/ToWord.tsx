@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { pdfToDocx } from '../engine/convert'
 import { saveFile } from '../platform'
-import { Drop, Button, Note, Picked, ToolProps, baseName, useTask , useIncoming } from '../ui'
+import { Drop, Button, Note, Picked, ToolProps, baseName, useTask , useIncoming , FileCard } from '../ui'
 
 export default function ToWord(props: ToolProps) {
   const { notify } = props
@@ -17,7 +17,7 @@ export default function ToWord(props: ToolProps) {
   if (!file) return <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Convert to an editable .docx" onFiles={([f]) => setFile(f)} />
   return (
     <>
-      <div className="card"><p className="row-title">{file.name}</p></div>
+      <FileCard file={file} />
       <Note>Text is extracted and rebuilt into paragraphs and headings. Tables, columns, images and scanned pages are not carried over, so expect to tidy the result.</Note>
       <div className="actions">
         <Button variant="quiet" onClick={() => setFile(null)}>Choose another</Button>

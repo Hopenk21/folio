@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { ChevronUp, ChevronDown, GripVertical, X } from 'lucide-react'
+import { ChevronUp, ChevronDown, Eye, GripVertical, X } from 'lucide-react'
 import { mergePdfs, pageCount } from '../engine/pdf'
 import { saveFile } from '../platform'
 import { moveItem, useDragReorder } from '../drag'
-import { Drop, Button, Item, Note, Picked, ToolProps, fmtSize, nid, useTask , useIncoming } from '../ui'
+import { Drop, Button, Item, Note, Picked, ToolProps, fmtSize, nid, useTask , useIncoming , useViewer } from '../ui'
 
 export default function Merge(props: ToolProps) {
   const { notify } = props
+  const view = useViewer()
   const [items, setItems] = useState<Item[]>([])
   const [busy, run] = useTask(notify)
   const drag = useDragReorder((from, to) => setItems((cur) => moveItem(cur, from, to)))
@@ -48,6 +49,7 @@ export default function Merge(props: ToolProps) {
                 <span className="row-title">{it.name}</span>
                 <span className="row-sub">{it.pages} pages · {fmtSize(it.bytes.length)}</span>
               </div>
+              <button className="icon" aria-label={`Preview ${it.name}`} onClick={() => view(it.name, it.bytes)}><Eye size={16} /></button>
               <button className="icon" aria-label="Move up" onClick={() => move(i, i - 1)}><ChevronUp size={16} /></button>
               <button className="icon" aria-label="Move down" onClick={() => move(i, i + 1)}><ChevronDown size={16} /></button>
               <button className="icon" aria-label="Remove" onClick={() => setItems(items.filter((x) => x.id !== it.id))}><X size={16} /></button>
