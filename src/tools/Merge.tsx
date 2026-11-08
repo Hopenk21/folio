@@ -3,7 +3,7 @@ import { ChevronUp, ChevronDown, GripVertical, X } from 'lucide-react'
 import { mergePdfs, pageCount } from '../engine/pdf'
 import { saveFile } from '../platform'
 import { moveItem, useDragReorder } from '../drag'
-import { Drop, Button, Item, Picked, ToolProps, fmtSize, nid, useTask , useIncoming } from '../ui'
+import { Drop, Button, Item, Note, Picked, ToolProps, fmtSize, nid, useTask , useIncoming } from '../ui'
 
 export default function Merge(props: ToolProps) {
   const { notify } = props
@@ -33,14 +33,16 @@ export default function Merge(props: ToolProps) {
   return (
     <>
       <Drop accept="application/pdf,.pdf" multiple label="Add PDF files" hint="Drop here or browse" onFiles={add} />
+      {items.length > 1 && <Note>Touch and hold a file, then drag it into place.</Note>}
       {items.length > 0 && (
         <ul className="list" ref={drag.ref}>
           {items.map((it, i) => (
             <li
               key={it.id}
+              {...drag.bind(i)}
               className={'row' + (drag.state?.from === i ? ' dragging' : '') + (drag.state && drag.state.to === i && drag.state.to !== drag.state.from ? ' drop-target' : '')}
             >
-              <button className="icon handle" aria-label={`Drag ${it.name} to reorder`} onPointerDown={(e) => drag.start(e, i)}><GripVertical size={16} /></button>
+              <GripVertical size={16} className="grip" />
               <span className="badge">PDF</span>
               <div className="row-main">
                 <span className="row-title">{it.name}</span>

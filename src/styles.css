@@ -194,3 +194,8 @@ input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
 .row-open { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0 2px 44px; }
 .hist-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .btn.quiet.dangerous { border-color: var(--danger); color: var(--danger); }
+
+/* drag from anywhere on the item */
+.thumb, .row { -webkit-touch-callout: none; cursor: grab; }
+.thumb img { pointer-events: none; }
+.row button, .thumb button { cursor: pointer; }

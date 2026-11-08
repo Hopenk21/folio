@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { GripVertical, RotateCw, Trash2 } from 'lucide-react'
+import { RotateCw, Trash2 } from 'lucide-react'
 import { organize, pageCount } from '../engine/pdf'
 import { renderThumbs } from '../engine/render'
 import { saveFile } from '../platform'
@@ -40,20 +40,20 @@ export default function Organize(props: ToolProps) {
       {!file && <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Drag pages into the order you want" onFiles={open} />}
       {file && (
         <>
-          <Note>Hold the grip on a page and drag it to where it should go. The page under your finger is highlighted, and it drops there when you let go.</Note>
+          <Note>Touch and hold any page, then drag it to where it should go. The page under your finger is highlighted, and it drops there when you let go.</Note>
           <div className="grid" ref={drag.ref}>
             {pages.map((p, i) => (
               <div
                 className={'thumb' + (drag.state?.from === i ? ' dragging' : '') + (drag.state && drag.state.to === i && drag.state.to !== drag.state.from ? ' drop-target' : '')}
                 key={p.index}
+                {...drag.bind(i)}
               >
-                <div className="thumb-img" onPointerDown={(e) => { if (e.pointerType === 'mouse') drag.start(e, i) }}>
+                <div className="thumb-img">
                   {p.thumb
                     ? <img src={p.thumb} alt={`Page ${i + 1}`} draggable={false} style={{ transform: `rotate(${p.rotate}deg)` }} />
                     : <span className="thumb-wait" />}
                 </div>
                 <div className="thumb-bar">
-                  <button className="icon handle" aria-label={`Drag page ${i + 1} to reorder`} onPointerDown={(e) => drag.start(e, i)}><GripVertical size={16} /></button>
                   <span className="thumb-num">{i + 1}</span>
                   <button className="icon" aria-label="Rotate" onClick={() => rotate(i)}><RotateCw size={14} /></button>
                   <button className="icon" aria-label="Delete page" onClick={() => setPages(pages.filter((_, k) => k !== i))}><Trash2 size={14} /></button>

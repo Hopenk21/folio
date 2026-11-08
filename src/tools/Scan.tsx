@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { GripVertical, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { imagesToPdf } from '../engine/pdf'
 import { draftLoad, draftSync, newId, saveFile, scanPages } from '../platform'
 import { moveItem, useDragReorder } from '../drag'
@@ -50,18 +50,18 @@ export default function Scan({ notify }: ToolProps) {
       <div className="actions start"><Button onClick={scan} busy={busy}>{pages.length ? 'Scan more pages' : 'Start scanning'}</Button></div>
       {pages.length > 0 && (
         <>
-          <Note>Your scans are kept safely on this device until you save them as a PDF.</Note>
+          <Note>Your scans are kept safely on this device until you save them. Touch and hold a page, then drag it to reorder.</Note>
           <div className="grid" ref={drag.ref}>
             {pages.map((p, i) => (
               <div
                 className={'thumb' + (drag.state?.from === i ? ' dragging' : '') + (drag.state && drag.state.to === i && drag.state.to !== drag.state.from ? ' drop-target' : '')}
                 key={p.id}
+                {...drag.bind(i)}
               >
-                <div className="thumb-img" onPointerDown={(e) => { if (e.pointerType === 'mouse') drag.start(e, i) }}>
+                <div className="thumb-img">
                   <img src={p.url} alt={`Scan ${i + 1}`} draggable={false} />
                 </div>
                 <div className="thumb-bar">
-                  <button className="icon handle" aria-label={`Drag scan ${i + 1} to reorder`} onPointerDown={(e) => drag.start(e, i)}><GripVertical size={16} /></button>
                   <span className="thumb-num">{i + 1}</span>
                   <button className="icon" aria-label="Delete" onClick={() => setPages(pages.filter((x) => x.id !== p.id))}><X size={14} /></button>
                 </div>

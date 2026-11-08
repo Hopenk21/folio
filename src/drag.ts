@@ -1,21 +1,22 @@
-import { useCallback, useRef, useState, type PointerEvent as RPE } from 'react'
+import { useCallback, useRef, useState, type MouseEvent as RME, type PointerEvent as RPE } from 'react'
 
 /**
- * Touch- and mouse-friendly drag-to-reorder for a list or grid.
- * Put `ref` on the container (its direct children are the items) and call
- * `start(e, index)` from a handle's onPointerDown. The item follows your finger,
- * the tile under it is highlighted, and on release the item moves to that position.
+ * Drag-to-reorder for a list or grid, started from anywhere on an item.
+ * - Touch: press and hold an item for a moment, then drag. A quick swipe still scrolls the page.
+ * - Mouse: click and drag.
+ * Put `ref` on the container (its direct children are the items) and spread `bind(index)` on each
+ * item. The item lifts and follows your finger, the item under it is highlighted, and on release
+ * it moves to that position. Buttons inside an item still work as normal.
  */
 export function useDragReorder(onMove: (from: number, to: number) => void) {
   const container = useRef<HTMLElement | null>(null)
   const [state, setState] = useState<{ from: number; to: number } | null>(null)
   const ref = useCallback((el: HTMLElement | null) => { container.current = el }, [])
 
-  const start = (e: RPE, index: number) => {
+  const begin = (index: number, x0: number, y0: number) => {
     const c = container.current
     const el = c?.children[index] as HTMLElement | undefined
     if (!c || !el) return
-    e.preventDefault()
 
     const r = el.getBoundingClientRect()
     const ghost = el.cloneNode(true) as HTMLElement
@@ -26,7 +27,7 @@ export function useDragReorder(onMove: (from: number, to: number) => void) {
     })
     document.body.appendChild(ghost)
 
-    const l = { from: index, to: index, gx: e.clientX - r.left, gy: e.clientY - r.top, x: e.clientX, y: e.clientY, raf: 0 }
+    const l = { from: index, to: index, gx: x0 - r.left, gy: y0 - r.top, x: x0, y: y0, raf: 0 }
     setState({ from: index, to: index })
     const scroller = c.closest('.main') as HTMLElement | null
 
@@ -54,12 +55,15 @@ export function useDragReorder(onMove: (from: number, to: number) => void) {
     l.raf = requestAnimationFrame(loop)
 
     const move = (ev: PointerEvent) => { l.x = ev.clientX; l.y = ev.clientY; place() }
+    // Once an item is picked up, the page must not scroll under the finger.
+    const block = (ev: TouchEvent) => { if (ev.cancelable) ev.preventDefault() }
     const finish = (commit: boolean) => {
       cancelAnimationFrame(l.raf)
       ghost.remove()
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', cancel)
+      window.removeEventListener('touchmove', block)
       setState(null)
       if (commit && l.to !== l.from) onMove(l.from, l.to)
     }
@@ -68,9 +72,51 @@ export function useDragReorder(onMove: (from: number, to: number) => void) {
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', cancel)
+    window.addEventListener('touchmove', block, { passive: false })
   }
 
-  return { ref, start, state }
+  const press = (e: RPE, index: number) => {
+    const touch = e.pointerType !== 'mouse'
+    if (!touch && e.button !== 0) return
+    const sx = e.clientX
+    const sy = e.clientY
+    let x = sx
+    let y = sy
+    let timer = 0
+
+    const stop = () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('pointermove', mv)
+      window.removeEventListener('pointerup', stop)
+      window.removeEventListener('pointercancel', stop)
+    }
+    const fire = () => {
+      stop()
+      try { navigator.vibrate?.(12) } catch { /* no haptics */ }
+      begin(index, x, y)
+    }
+    const mv = (ev: PointerEvent) => {
+      x = ev.clientX
+      y = ev.clientY
+      const d = Math.hypot(x - sx, y - sy)
+      if (touch) { if (d > 10) stop() } // finger moved first: it's a scroll, not a pick-up
+      else if (d > 4) fire()
+    }
+    window.addEventListener('pointermove', mv)
+    window.addEventListener('pointerup', stop)
+    window.addEventListener('pointercancel', stop)
+    if (touch) timer = window.setTimeout(fire, 280)
+  }
+
+  const bind = (index: number) => ({
+    onPointerDown: (e: RPE) => {
+      if ((e.target as HTMLElement).closest('button, a, input')) return // let buttons work normally
+      press(e, index)
+    },
+    onContextMenu: (e: RME) => e.preventDefault(),
+  })
+
+  return { ref, bind, state }
 }
 
 export const moveItem = <T,>(arr: T[], from: number, to: number): T[] => {
