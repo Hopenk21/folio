@@ -1,5 +1,8 @@
-import * as pdfjs from 'pdfjs-dist'
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
+// The legacy build runs on older Android WebView versions that the modern build breaks on.
+// @ts-ignore - no bundled types for the legacy entry point
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs'
+// @ts-ignore
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
 

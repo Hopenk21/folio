@@ -85,6 +85,11 @@ export default function App() {
   }, [])
 
   const openIn = useCallback((toolId: string, files: Picked[]) => { setIncoming({ toolId, files }); setActive(toolId) }, [])
+  useEffect(() => {
+    const onRej = (e: PromiseRejectionEvent) => notify(String((e.reason && e.reason.message) || 'Something went wrong'), 'error')
+    window.addEventListener('unhandledrejection', onRej)
+    return () => window.removeEventListener('unhandledrejection', onRej)
+  }, [notify])
   const tool = tools.find((t) => t.id === active)
   const jumpBack = tools.filter((t) => usage[t.id]).sort((x, y) => usage[y.id] - usage[x.id]).slice(0, 3)
   const View = tool?.View

@@ -1,11 +1,18 @@
 name: Build Folio
 on:
   workflow_dispatch:
+    inputs:
+      target:
+        description: Which build to run
+        type: choice
+        options: [android, windows, both]
+        default: android
   push:
     tags: ['v*']
 
 jobs:
   windows:
+    if: ${{ github.event_name == 'push' || inputs.target == 'windows' || inputs.target == 'both' }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +26,7 @@ jobs:
           path: release/*.exe
 
   android:
+    if: ${{ github.event_name == 'push' || inputs.target != 'windows' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
