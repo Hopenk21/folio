@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { addPageNumbers, watermark } from '../engine/pdf'
 import { saveFile } from '../platform'
-import { Drop, Button, Field, Picked, ToolProps, baseName, useTask } from '../ui'
+import { Drop, Button, Field, Picked, ToolProps, baseName, useTask , useIncoming } from '../ui'
 
-export default function Stamp({ notify }: ToolProps) {
+export default function Stamp(props: ToolProps) {
+  const { notify } = props
   const [file, setFile] = useState<Picked | null>(null)
   const [text, setText] = useState('CONFIDENTIAL')
   const [opacity, setOpacity] = useState(0.18)
@@ -17,6 +18,8 @@ export default function Stamp({ notify }: ToolProps) {
     if (numbers) out = await addPageNumbers(out)
     if (await saveFile(`${baseName(file!.name)}-stamped.pdf`, out)) notify('Saved')
   })
+
+  useIncoming(props, (f) => setFile(f[0]))
 
   if (!file) return <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Add a watermark or page numbers" onFiles={([f]) => setFile(f)} />
   return (

@@ -3,9 +3,10 @@ import { ChevronUp, ChevronDown, GripVertical, X } from 'lucide-react'
 import { mergePdfs, pageCount } from '../engine/pdf'
 import { saveFile } from '../platform'
 import { moveItem, useDragReorder } from '../drag'
-import { Drop, Button, Item, Picked, ToolProps, fmtSize, nid, useTask } from '../ui'
+import { Drop, Button, Item, Picked, ToolProps, fmtSize, nid, useTask , useIncoming } from '../ui'
 
-export default function Merge({ notify }: ToolProps) {
+export default function Merge(props: ToolProps) {
+  const { notify } = props
   const [items, setItems] = useState<Item[]>([])
   const [busy, run] = useTask(notify)
   const drag = useDragReorder((from, to) => setItems((cur) => moveItem(cur, from, to)))
@@ -26,6 +27,8 @@ export default function Merge({ notify }: ToolProps) {
     const out = await mergePdfs(items.map((i) => i.bytes))
     if (await saveFile('merged.pdf', out)) notify(`Merged ${items.length} files`)
   })
+
+  useIncoming(props, (f) => { add(f) })
 
   return (
     <>

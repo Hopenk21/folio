@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { optimize } from '../engine/pdf'
 import { saveFile } from '../platform'
-import { Drop, Button, Note, Picked, ToolProps, baseName, fmtSize, useTask } from '../ui'
+import { Drop, Button, Note, Picked, ToolProps, baseName, fmtSize, useTask , useIncoming } from '../ui'
 
-export default function Optimize({ notify }: ToolProps) {
+export default function Optimize(props: ToolProps) {
+  const { notify } = props
   const [file, setFile] = useState<Picked | null>(null)
   const [busy, run] = useTask(notify)
 
@@ -13,6 +14,8 @@ export default function Optimize({ notify }: ToolProps) {
     if (await saveFile(`${baseName(file!.name)}-optimized.pdf`, out))
       notify(saved > 0 ? `Saved. ${fmtSize(file!.bytes.length)} → ${fmtSize(out.length)}` : 'Saved. This file was already compact')
   })
+
+  useIncoming(props, (f) => setFile(f[0]))
 
   if (!file) return <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Tidy structure and strip metadata" onFiles={([f]) => setFile(f)} />
   return (

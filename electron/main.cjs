@@ -51,5 +51,15 @@ ipcMain.handle('lib:read', (_e, name) => fs.readFileSync(path.join(libDir(), saf
 ipcMain.handle('lib:delete', (_e, name) => { fs.unlinkSync(path.join(libDir(), safeName(name))) })
 ipcMain.handle('lib:reveal', (_e, name) => { shell.showItemInFolder(path.join(libDir(), safeName(name))) })
 
+// History: copies of opened documents in the app's own data folder
+const histDir = () => {
+  const d = path.join(app.getPath('userData'), 'history')
+  fs.mkdirSync(d, { recursive: true })
+  return d
+}
+ipcMain.handle('hist:save', (_e, id, bytes) => { fs.writeFileSync(path.join(histDir(), safeName(id)), Buffer.from(bytes)) })
+ipcMain.handle('hist:read', (_e, id) => fs.readFileSync(path.join(histDir(), safeName(id))))
+ipcMain.handle('hist:delete', (_e, id) => { fs.unlinkSync(path.join(histDir(), safeName(id))) })
+
 app.whenReady().then(createWindow)
 app.on('window-all-closed', () => app.quit())

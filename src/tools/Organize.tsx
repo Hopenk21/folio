@@ -4,11 +4,12 @@ import { organize, pageCount } from '../engine/pdf'
 import { renderThumbs } from '../engine/render'
 import { saveFile } from '../platform'
 import { moveItem, useDragReorder } from '../drag'
-import { Drop, Button, Note, Picked, ToolProps, baseName, useTask } from '../ui'
+import { Drop, Button, Note, Picked, ToolProps, baseName, useTask , useIncoming } from '../ui'
 
 interface Pg { index: number; rotate: number; thumb?: string }
 
-export default function Organize({ notify }: ToolProps) {
+export default function Organize(props: ToolProps) {
+  const { notify } = props
   const [file, setFile] = useState<Picked | null>(null)
   const [pages, setPages] = useState<Pg[]>([])
   const [busy, run] = useTask(notify)
@@ -31,6 +32,8 @@ export default function Organize({ notify }: ToolProps) {
     const out = await organize(file!.bytes, pages.map((p) => ({ index: p.index, rotate: p.rotate })))
     if (await saveFile(`${baseName(file!.name)}-organized.pdf`, out)) notify('Saved')
   })
+
+  useIncoming(props, (f) => { open(f) })
 
   return (
     <>

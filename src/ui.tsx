@@ -1,8 +1,23 @@
-import { useRef, useState, type ReactNode, type DragEvent } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type DragEvent } from 'react'
+import { histAdd } from './platform'
 import { FilePlus2 } from 'lucide-react'
 
 export type Notify = (msg: string, kind?: 'ok' | 'error') => void
-export interface ToolProps { notify: Notify }
+export interface ToolProps {
+  notify: Notify
+  incoming?: Picked[]
+  clearIncoming?: () => void
+  openIn?: (toolId: string, files: Picked[]) => void
+}
+export const ToolCtx = createContext('')
+
+/** If a document was sent here from History, open it once on arrival. */
+export function useIncoming(props: ToolProps, handler: (files: Picked[]) => void) {
+  useEffect(() => {
+    if (props.incoming?.length) { handler(props.incoming); props.clearIncoming?.() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+}
 export interface Picked { name: string; bytes: Uint8Array }
 export interface Item extends Picked { id: string; pages?: number }
 
@@ -26,8 +41,14 @@ export function useTask(notify: Notify): [boolean, (fn: () => Promise<void>) => 
 
 export function Drop(props: { accept: string; multiple?: boolean; label: string; hint?: string; onFiles: (f: Picked[]) => void }) {
   const input = useRef<HTMLInputElement>(null)
+  const tool = useContext(ToolCtx)
   const [over, setOver] = useState(false)
-  const take = async (files: FileList | null) => { if (files?.length) props.onFiles(await readFiles(files)) }
+  const take = async (files: FileList | null) => {
+    if (!files?.length) return
+    const picked = await readFiles(files)
+    props.onFiles(picked)
+    picked.forEach((f) => histAdd(f.name, f.bytes, tool).catch(() => {})) // remember it in History
+  }
   const onDrop = (e: DragEvent) => { e.preventDefault(); setOver(false); take(e.dataTransfer.files) }
   return (
     <button type="button" className={'drop' + (over ? ' over' : '')}

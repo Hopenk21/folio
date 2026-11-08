@@ -2,9 +2,10 @@ import { useState } from 'react'
 import JSZip from 'jszip'
 import { extractPages, pageCount, parseRanges, splitEvery } from '../engine/pdf'
 import { saveFile } from '../platform'
-import { Drop, Button, Field, Picked, ToolProps, baseName, useTask } from '../ui'
+import { Drop, Button, Field, Picked, ToolProps, baseName, useTask , useIncoming } from '../ui'
 
-export default function Split({ notify }: ToolProps) {
+export default function Split(props: ToolProps) {
+  const { notify } = props
   const [file, setFile] = useState<Picked | null>(null)
   const [total, setTotal] = useState(0)
   const [mode, setMode] = useState<'ranges' | 'every'>('ranges')
@@ -27,6 +28,8 @@ export default function Split({ notify }: ToolProps) {
       if (await saveFile(`${name}-split.zip`, await zip.generateAsync({ type: 'uint8array' }))) notify(`Saved ${parts.length} files in a zip`)
     }
   })
+
+  useIncoming(props, (f) => { open(f) })
 
   if (!file) return <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Extract pages or split into parts" onFiles={open} />
   return (

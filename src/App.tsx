@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
-import { ArrowLeft, Combine, FileOutput, FileText, FolderOpen, House, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
-import { hasLibrary, isAndroid } from './platform'
-import type { Notify, ToolProps } from './ui'
+import { ArrowLeft, Combine, FileOutput, FileText, FolderOpen, History as HistoryIcon, House, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
+import { consumeResume, hasLibrary, isAndroid } from './platform'
+import { ToolCtx, type Notify, type Picked, type ToolProps } from './ui'
 import Merge from './tools/Merge'
 import Organize from './tools/Organize'
 import Split from './tools/Split'
@@ -11,11 +11,13 @@ import ToWord from './tools/ToWord'
 import ToPdf from './tools/ToPdf'
 import Scan from './tools/Scan'
 import Library from './tools/Library'
+import History from './tools/History'
 
 interface Tool { id: string; group: string; label: string; title: string; desc: string; icon: typeof Combine; View: ComponentType<ToolProps>; androidOnly?: boolean; libraryOnly?: boolean }
 
 const TOOLS: Tool[] = [
   { id: 'library', group: 'Library', label: 'Library', title: 'Your files', desc: "Everything you've made in Folio, ready to share.", icon: FolderOpen, View: Library, libraryOnly: true },
+  { id: 'history', group: 'Library', label: 'History', title: 'History', desc: 'Documents you opened recently, ready to pick up again.', icon: HistoryIcon, View: History, libraryOnly: true },
   { id: 'merge', group: 'Organize', label: 'Merge', title: 'Merge PDFs', desc: 'Combine several PDFs into one, in the order you choose.', icon: Combine, View: Merge },
   { id: 'organize', group: 'Organize', label: 'Organize', title: 'Organize pages', desc: 'Reorder, rotate and delete pages.', icon: LayoutGrid, View: Organize },
   { id: 'split', group: 'Organize', label: 'Split', title: 'Split or extract', desc: 'Pull out page ranges or cut into parts.', icon: Scissors, View: Split },
@@ -65,8 +67,10 @@ function Logo({ size = 28 }: { size?: number }) {
 
 export default function App() {
   const tools = TOOLS.filter((t) => (!t.androidOnly || isAndroid) && (!t.libraryOnly || hasLibrary))
-  const [active, setActive] = useState<string>('home')
-  const [splash, setSplash] = useState(true)
+  const [boot] = useState(consumeResume) // set when Android restarted the app mid-scan
+  const [active, setActive] = useState<string>(boot || 'home')
+  const [splash, setSplash] = useState(!boot)
+  const [incoming, setIncoming] = useState<{ toolId: string; files: Picked[] } | null>(null)
   const [usage, setUsage] = useState(readUsage)
   const activeRef = useRef('home')
   activeRef.current = active
@@ -80,6 +84,7 @@ export default function App() {
     timer.current = window.setTimeout(() => setToast(null), 4500)
   }, [])
 
+  const openIn = useCallback((toolId: string, files: Picked[]) => { setIncoming({ toolId, files }); setActive(toolId) }, [])
   const tool = tools.find((t) => t.id === active)
   const jumpBack = tools.filter((t) => usage[t.id]).sort((x, y) => usage[y.id] - usage[x.id]).slice(0, 3)
   const View = tool?.View
@@ -157,7 +162,11 @@ export default function App() {
               <h1>{tool.title}</h1>
               <p>{tool.desc}</p>
             </header>
-            <section className="panel" key={tool.id}><View notify={notify} /></section>
+            <section className="panel" key={tool.id}>
+              <ToolCtx.Provider value={tool.id}>
+                <View notify={notify} incoming={incoming?.toolId === tool.id ? incoming.files : undefined} clearIncoming={() => setIncoming(null)} openIn={openIn} />
+              </ToolCtx.Provider>
+            </section>
           </>
         )}
       </main>
