@@ -1,7 +1,7 @@
 {
   "name": "folio",
   "productName": "Folio",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "PDF toolkit: merge, organize, split, stamp, optimize, convert, scan",
   "main": "electron/main.cjs",
   "type": "module",
