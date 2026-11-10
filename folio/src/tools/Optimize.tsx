@@ -1,0 +1,31 @@
+import { useState } from 'react'
+import { optimize } from '../engine/pdf'
+import { saveFile } from '../platform'
+import { Drop, Button, Note, Picked, ToolProps, baseName, fmtSize, useTask , useIncoming , FileCard } from '../ui'
+
+export default function Optimize(props: ToolProps) {
+  const { notify } = props
+  const [file, setFile] = useState<Picked | null>(null)
+  const [busy, run] = useTask(notify)
+
+  const go = () => run(async () => {
+    const out = await optimize(file!.bytes)
+    const saved = file!.bytes.length - out.length
+    if (await saveFile(`${baseName(file!.name)}-optimized.pdf`, out))
+      notify(saved > 0 ? `Saved. ${fmtSize(file!.bytes.length)} → ${fmtSize(out.length)}` : 'Saved. This file was already compact')
+  })
+
+  useIncoming(props, (f) => setFile(f[0]))
+
+  if (!file) return <Drop accept="application/pdf,.pdf" label="Choose a PDF" hint="Tidy structure and strip metadata" onFiles={([f]) => setFile(f)} />
+  return (
+    <>
+      <FileCard file={file} sub={fmtSize(file.bytes.length)} />
+      <Note>This is a lossless clean-up: it repacks the file structure and removes author and title metadata. It does not recompress images, so scan-heavy PDFs may barely shrink.</Note>
+      <div className="actions">
+        <Button variant="quiet" onClick={() => setFile(null)}>Choose another</Button>
+        <Button onClick={go} busy={busy}>Optimize and save</Button>
+      </div>
+    </>
+  )
+}
