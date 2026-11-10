@@ -103,7 +103,3 @@ export function FileCard({ file, sub }: { file: Picked; sub?: string }) {
     </div>
   )
 }
-
-// ---- Legal documents reader access ----
-export const LegalCtx = createContext<(id: string) => void>(() => {})
-export const useLegal = () => useContext(LegalCtx)

@@ -1,11 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
-import { ArrowLeft, Combine, FileOutput, FileText, FolderOpen, History as HistoryIcon, House, Info, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
+import { ArrowLeft, Combine, FileOutput, FileText, FolderOpen, History as HistoryIcon, House, LayoutGrid, Minimize2, ScanLine, Scissors, Stamp as StampIcon } from 'lucide-react'
 import { consumeResume, hasLibrary, isAndroid, isNativeAndroid } from './platform'
 import Viewer from './Viewer'
-import LegalReader from './legal/LegalReader'
-import { LEGAL_DOCS } from './legal'
-import { LEGAL_VERSION } from './config'
-import { LegalCtx, ToolCtx, ViewerCtx, type Notify, type Picked, type ToolProps } from './ui'
+import { ToolCtx, ViewerCtx, type Notify, type Picked, type ToolProps } from './ui'
 import Merge from './tools/Merge'
 import Organize from './tools/Organize'
 import Split from './tools/Split'
@@ -16,12 +13,10 @@ import ToPdf from './tools/ToPdf'
 import Scan from './tools/Scan'
 import Library from './tools/Library'
 import History from './tools/History'
-import About from './tools/About'
 
 interface Tool { id: string; group: string; label: string; title: string; desc: string; icon: typeof Combine; View: ComponentType<ToolProps>; androidOnly?: boolean; libraryOnly?: boolean }
 
 const TOOLS: Tool[] = [
-  { id: 'about', group: 'About', label: 'About & legal', title: 'About & legal', desc: 'Version, privacy policy, terms and license.', icon: Info, View: About },
   { id: 'library', group: 'Library', label: 'Library', title: 'Your files', desc: "Everything you've made in Folio, ready to share.", icon: FolderOpen, View: Library, libraryOnly: true },
   { id: 'history', group: 'Library', label: 'History', title: 'History', desc: 'Documents you opened recently, ready to pick up again.', icon: HistoryIcon, View: History, libraryOnly: true },
   { id: 'merge', group: 'Organize', label: 'Merge', title: 'Merge PDFs', desc: 'Combine several PDFs into one, in the order you choose.', icon: Combine, View: Merge },
@@ -33,7 +28,7 @@ const TOOLS: Tool[] = [
   { id: 'topdf', group: 'Convert', label: 'To PDF', title: 'Word to PDF', desc: 'Turn a Word document into a PDF.', icon: FileOutput, View: ToPdf },
   { id: 'scan', group: 'Capture', label: 'Scan', title: 'Scan documents', desc: 'Capture pages with your camera and save as PDF.', icon: ScanLine, View: Scan, androidOnly: true },
 ]
-const GROUPS = ['Library', 'Organize', 'Edit', 'Convert', 'Capture', 'About']
+const GROUPS = ['Library', 'Organize', 'Edit', 'Convert', 'Capture']
 
 
 const USE_KEY = 'folio.usage'
@@ -71,39 +66,11 @@ function Logo({ size = 28 }: { size?: number }) {
   return <img className="logo" src="./logo.png" width={size} height={size} alt="" onError={() => setBroken(true)} />
 }
 
-
-const ACCEPT_KEY = 'folio.legal.accepted'
-const readAccepted = () => { try { return localStorage.getItem(ACCEPT_KEY) === LEGAL_VERSION } catch { return false } }
-
-function Consent({ onAccept, onOpen }: { onAccept: () => void; onOpen: (id: string) => void }) {
-  return (
-    <div className="consent">
-      <div className="consent-card">
-        <Logo size={56} />
-        <h1>Welcome to Folio</h1>
-        <p>Folio works on your device and does not collect your files. Please review these documents and accept to continue.</p>
-        <ul className="consent-links">
-          {LEGAL_DOCS.map((d) => (
-            <li key={d.id}><button className="linkbtn" onClick={() => onOpen(d.id)}>{d.title}</button></li>
-          ))}
-        </ul>
-        <button className="btn primary" onClick={onAccept}>Agree and continue</button>
-        <p className="fine">By continuing you agree to the Terms of Service and the End User License Agreement, and confirm you have read the Privacy Policy.</p>
-      </div>
-    </div>
-  )
-}
-
 export default function App() {
   const tools = TOOLS.filter((t) => (!t.androidOnly || isAndroid) && (!t.libraryOnly || hasLibrary))
   const [boot] = useState(consumeResume) // set when Android restarted the app mid-scan
   const [active, setActive] = useState<string>(boot || 'home')
   const [splash, setSplash] = useState(!boot)
-  const [legalDoc, setLegalDoc] = useState<string | null>(null)
-  const legalRef = useRef(legalDoc)
-  legalRef.current = legalDoc
-  const [accepted, setAccepted] = useState(readAccepted)
-  const accept = () => { try { localStorage.setItem(ACCEPT_KEY, LEGAL_VERSION) } catch { /* ignore */ } setAccepted(true) }
   const [viewing, setViewing] = useState<{ name: string; bytes: Uint8Array } | null>(null)
   const viewingRef = useRef(viewing)
   viewingRef.current = viewing
@@ -134,8 +101,7 @@ export default function App() {
     let handle: { remove: () => void } | undefined
     import('@capacitor/app').then(({ App: CapApp }) => {
       CapApp.addListener('backButton', () => {
-        if (legalRef.current) setLegalDoc(null)
-        else if (viewingRef.current) setViewing(null)
+        if (viewingRef.current) setViewing(null)
         else if (activeRef.current !== 'home') setActive('home')
         else CapApp.exitApp()
       }).then((h) => { handle = h })
@@ -148,7 +114,6 @@ export default function App() {
 
   return (
     <ViewerCtx.Provider value={openViewer}>
-    <LegalCtx.Provider value={setLegalDoc}>
     <div className="app">
       {splash && <Splash onDone={() => setSplash(false)} />}
       <nav className="nav" aria-label="Tools">
@@ -236,11 +201,8 @@ export default function App() {
           {toast.kind === 'ok' && <button onClick={() => { setActive('home'); setToast(null) }}>More tools</button>}
         </div>
       )}
-      {!splash && !accepted && <Consent onAccept={accept} onOpen={setLegalDoc} />}
-      {legalDoc && <LegalReader id={legalDoc} onClose={() => setLegalDoc(null)} />}
       {viewing && <Viewer name={viewing.name} bytes={viewing.bytes} onClose={() => setViewing(null)} />}
     </div>
-    </LegalCtx.Provider>
     </ViewerCtx.Provider>
   )
 }

@@ -37,17 +37,13 @@ jobs:
       KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Check contact email is set
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          if grep -q REPLACE_ME src/config.ts; then echo "::error::Set CONTACT_EMAIL in src/config.ts before releasing."; exit 1; fi
       - name: Check signing secrets
         run: |
           if [ -z "$KEYSTORE_B64" ] || [ -z "$KS_PASS" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASS" ]; then
             echo "::error::Signing secrets are missing. Set ANDROID_KEYSTORE_B64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD (see README)."
             exit 1
           fi
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - uses: actions/setup-java@v4
