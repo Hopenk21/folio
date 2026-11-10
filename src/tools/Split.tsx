@@ -41,7 +41,7 @@ export default function Split(props: ToolProps) {
       </div>
       {mode === 'ranges'
         ? <Field label="Pages" note={`Example: 1-3, 5, 8-10 (document has ${total})`}><input className="input" value={ranges} onChange={(e) => setRanges(e.target.value)} placeholder="1-3, 5" /></Field>
-        : <Field label="Pages per file" note="Files are bundled into one zip"><input className="input" type="number" min={1} max={total} value={every} onChange={(e) => setEvery(+e.target.value)} /></Field>}
+        : <Field label="Pages per file" note="Files are bundled into one zip"><input className="input" type="number" min={1} max={total} value={every} onChange={(e) => setEvery(Math.max(1, Math.floor(+e.target.value) || 1))} /></Field>}
       <div className="actions">
         <Button variant="quiet" onClick={() => setFile(null)}>Choose another</Button>
         <Button onClick={go} busy={busy} disabled={mode === 'ranges' && !ranges.trim()}>{mode === 'ranges' ? 'Extract' : 'Split'}</Button>

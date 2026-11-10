@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { RotateCw, Trash2 } from 'lucide-react'
 import { organize, pageCount } from '../engine/pdf'
 import { renderThumbs } from '../engine/render'
@@ -14,14 +14,16 @@ export default function Organize(props: ToolProps) {
   const [file, setFile] = useState<Picked | null>(null)
   const [pages, setPages] = useState<Pg[]>([])
   const [busy, run] = useTask(notify)
+  const gen = useRef(0)
   const drag = useDragReorder((from, to) => setPages((cur) => moveItem(cur, from, to)))
 
   const open = async ([f]: Picked[]) => {
+    const mine = ++gen.current
     try {
       const n = await pageCount(f.bytes)
       setFile(f)
       setPages(Array.from({ length: n }, (_, i) => ({ index: i, rotate: 0 })))
-      await renderThumbs(f.bytes, (i, url) => setPages((cur) => cur.map((p) => (p.index === i ? { ...p, thumb: url } : p))))
+      await renderThumbs(f.bytes, (i, url) => setPages((cur) => cur.map((p) => (p.index === i ? { ...p, thumb: url } : p))), 180, () => gen.current !== mine)
     } catch {
       notify('That file could not be read as a PDF', 'error')
       setFile(null)
@@ -63,7 +65,7 @@ export default function Organize(props: ToolProps) {
             ))}
           </div>
           <div className="actions">
-            <Button variant="quiet" onClick={() => { setFile(null); setPages([]) }}>Choose another</Button>
+            <Button variant="quiet" onClick={() => { gen.current++; setFile(null); setPages([]) }}>Choose another</Button>
             <Button variant="quiet" onClick={() => view(file.name, file.bytes)}>View original</Button>
             <Button onClick={save} busy={busy} disabled={!pages.length}>Save PDF</Button>
           </div>

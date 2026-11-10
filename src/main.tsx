@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client'
-import '@fontsource-variable/inter'
+import '@fontsource-variable/bricolage-grotesque'
+import '@fontsource-variable/instrument-sans'
 import App from './App'
 import ErrorBoundary from './ErrorBoundary'
 import { initRestore } from './platform'

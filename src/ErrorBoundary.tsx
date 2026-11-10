@@ -15,9 +15,9 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
     if (!error) return this.props.children
     const details = `${error.name}: ${error.message}\n\n${error.stack ?? ''}`.slice(0, 3000)
     return (
-      <div style={{ padding: 24, maxWidth: 560, margin: '0 auto', fontFamily: 'system-ui, sans-serif', color: 'var(--ink, #1d1c1a)' }}>
+      <div style={{ padding: 24, maxWidth: 560, margin: '0 auto', fontFamily: 'system-ui, sans-serif', color: 'var(--ink, #16202a)' }}>
         <h1 style={{ fontSize: 22, margin: '24px 0 8px' }}>Something went wrong</h1>
-        <p style={{ margin: '0 0 16px', color: 'var(--muted, #6c6a65)' }}>
+        <p style={{ margin: '0 0 16px', color: 'var(--muted, #5f6d7a)' }}>
           Folio hit a problem on this screen. Your saved files are safe. Take a screenshot of the details below if you need to report it.
         </p>
         <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 12, padding: 12, borderRadius: 8, background: 'rgba(127,127,127,.12)', maxHeight: 280, overflow: 'auto' }}>{details}</pre>

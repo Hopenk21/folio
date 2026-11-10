@@ -219,12 +219,18 @@ async function convertScan(res: any): Promise<{ bytes: Uint8Array; type: 'png' |
   const out: { bytes: Uint8Array; type: 'png' | 'jpg' }[] = []
   for (const item of (res?.scannedImages ?? []) as string[]) {
     let bytes: Uint8Array
-    if (item.startsWith('/') || item.startsWith('file:')) {
-      bytes = new Uint8Array(await (await fetch(Capacitor.convertFileSrc(item))).arrayBuffer())
+    // A JPEG in base64 also starts with '/', so tell the two apart by its '/9j/' signature.
+    if ((item.startsWith('/') && !item.startsWith('/9j/')) || item.startsWith('file:')) {
+      const r = await fetch(Capacitor.convertFileSrc(item))
+      if (!r.ok) throw new Error('Could not read a scanned page from the device. Please try scanning again.')
+      bytes = new Uint8Array(await r.arrayBuffer())
     } else {
       bytes = fromBase64(item.replace(/^data:image\/\w+;base64,/, ''))
     }
-    out.push({ bytes, type: bytes[0] === 0x89 ? 'png' : 'jpg' })
+    const png = bytes[0] === 0x89 && bytes[1] === 0x50
+    const jpg = bytes[0] === 0xff && bytes[1] === 0xd8
+    if (!png && !jpg) throw new Error('A scanned page came back in an unexpected format. Please try scanning again.')
+    out.push({ bytes, type: png ? 'png' : 'jpg' })
   }
   return out
 }

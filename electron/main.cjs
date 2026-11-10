@@ -13,7 +13,7 @@ function createWindow() {
   const logo = path.join(__dirname, '..', 'dist', 'logo.png')
   const win = new BrowserWindow({
     width: 1120, height: 760, minWidth: 820, minHeight: 560,
-    backgroundColor: '#f6f5f1', icon: fs.existsSync(logo) ? logo : undefined,
+    backgroundColor: '#e8ecef', icon: fs.existsSync(logo) ? logo : undefined,
     autoHideMenuBar: true, title: 'Folio',
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false },
   })

@@ -13,16 +13,27 @@ export async function renderThumbs(
   bytes: Uint8Array,
   onThumb: (index: number, url: string) => void,
   width = 180,
+  isCancelled: () => boolean = () => false,
 ) {
   const doc = await loadPdf(bytes)
-  for (let i = 1; i <= doc.numPages; i++) {
-    const page = await doc.getPage(i)
-    const base = page.getViewport({ scale: 1 })
-    const viewport = page.getViewport({ scale: width / base.width })
-    const canvas = document.createElement('canvas')
-    canvas.width = viewport.width
-    canvas.height = viewport.height
-    await page.render({ canvasContext: canvas.getContext('2d')!, viewport }).promise
-    onThumb(i - 1, canvas.toDataURL('image/jpeg', 0.7))
+  try {
+    for (let i = 1; i <= doc.numPages; i++) {
+      if (isCancelled()) return
+      await renderOne(doc, i, width, onThumb)
+    }
+  } finally {
+    doc.destroy?.()
   }
+}
+
+async function renderOne(doc: any, i: number, width: number, onThumb: (index: number, url: string) => void) {
+  const page = await doc.getPage(i)
+  const base = page.getViewport({ scale: 1 })
+  const viewport = page.getViewport({ scale: width / base.width })
+  const canvas = document.createElement('canvas')
+  canvas.width = viewport.width
+  canvas.height = viewport.height
+  await page.render({ canvasContext: canvas.getContext('2d')!, viewport }).promise
+  onThumb(i - 1, canvas.toDataURL('image/jpeg', 0.7))
+  page.cleanup?.()
 }

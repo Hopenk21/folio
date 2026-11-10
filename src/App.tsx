@@ -88,6 +88,7 @@ export default function App() {
     timer.current = window.setTimeout(() => setToast(null), 4500)
   }, [])
 
+  const endSplash = useCallback(() => setSplash(false), [])
   const openViewer = useCallback((name: string, bytes: Uint8Array) => setViewing({ name, bytes }), [])
   const openIn = useCallback((toolId: string, files: Picked[]) => { setIncoming({ toolId, files }); setActive(toolId) }, [])
   useEffect(() => {
@@ -115,7 +116,7 @@ export default function App() {
   return (
     <ViewerCtx.Provider value={openViewer}>
     <div className="app">
-      {splash && <Splash onDone={() => setSplash(false)} />}
+      {splash && <Splash onDone={endSplash} />}
       <nav className="nav" aria-label="Tools">
         <button className="brand" onClick={() => setActive('home')} aria-label="Folio home"><Logo /><span className="brand-name">Folio</span></button>
         <ul>
